@@ -4,6 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const navItems = (window.NAV_ITEMS || []).slice();
   const views = document.querySelectorAll(".view");
 
+  // Track whether we've already rendered each chart, so we don't redraw on every click
+  const rendered = {
+    speeding: false,
+    jurisdiction: false,
+    detection: false,
+    age: false,
+    alcohol: false,
+  };
+
   // ----- Build navigation -----
   navItems.forEach((item, index) => {
     const link = document.createElement("a");
@@ -31,7 +40,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Later,trigger charts here
+    // Trigger chart render when the speeding view is first shown
+    if (id === "speeding" && !rendered.speeding) {
+      if (window.renderFinesFromSpeedingMultiLine) {
+        window.renderFinesFromSpeedingMultiLine("#chart-speeding");
+        rendered.speeding = true;
+      }
+    }
   }
 
   // ----- Nav click behaviour -----
