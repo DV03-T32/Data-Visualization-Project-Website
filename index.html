@@ -32,7 +32,7 @@
 
         <!-- HOME VIEW (no charts) -->
         <section id="view-home" class="view is-active">
-            <section class="section section--narrow">
+            <section class="section section-narrow">
                 <h2>About this dashboard</h2>
                 <p>
                 The T32 Speeding Dashboard summarises speeding fines issued between
@@ -46,7 +46,83 @@
                 </p>
             </section>
 
-            <section class="section section--narrow">
+            <hr class="section-divider">
+
+             <!-- DATASETS USED -->
+            <section class="section section-narrow">
+                <h2>Datasets Used</h2>
+                <ul class="bullet-list">
+                <li>police_enforcement_2024_positive_breath_tests.xlsx</li>
+                <li>police_enforcement_2024_alcohol_drug_tests.xlsx</li>
+                <li>police_enforcement_2024_fines.xlsx</li>
+                </ul>
+            </section>
+
+            <hr class="section-divider">
+
+            <!-- DATA COLLECTION PROCESS -->
+            <section class="section section-narrow">
+                <h2>Data Collection Process</h2>
+                <ul class="bullet-list">
+                <li>
+                    Police Enforcement datasets are compiled by BITRE using data submitted by
+                    state and territory policing and transport agencies.
+                </li>
+
+                <li>
+                    Agencies contributing data include:
+                    <ul class="nested-bullet">
+                    <li>NSW Police Force</li>
+                    <li>Victoria Police</li>
+                    <li>Queensland Police Service</li>
+                    <li>Department of Transport and Main Roads (QLD)</li>
+                    <li>South Australia Police</li>
+                    <li>Western Australia Police Force</li>
+                    <li>Tasmania Police & Department of Police and Emergency Management</li>
+                    <li>Northern Territory Police</li>
+                    <li>Australian Federal Police</li>
+                    <li>Access Canberra</li>
+                    <li>Australian Infrastructure and Transport Statistics Yearbook</li>
+                    </ul>
+                </li>
+
+                <li>
+                    Each jurisdiction reports annual data and, from 2023 onwards, monthly enforcement activity.
+                </li>
+
+                <li>
+                    BITRE aggregates, validates, and standardises all submissions before publishing on the
+                    <em>Road Safety Data Hub</em>.
+                </li>
+                </ul>
+            </section>
+
+            <hr class="section-divider">
+
+            <!-- NOTES -->
+            <section class="section section-narrow small-text">
+                <h2>Notes</h2>
+                <ul class="bullet-list">
+                <li>Please refer to the Road User Placements for rules in Australia from the Office of Road Safety website.</li>
+                <li>Annual drivers licence data is sourced from the Australian Infrastructure and Transport Statistics Yearbook.</li>
+                <li>
+                    The Department of Infrastructure, Transport, Regional Development, Communications and the Arts 
+                    gratefully acknowledges the provision of data from state and territory agencies.
+                </li>
+                <li>NSW Police Force, Transport for NSW</li>
+                <li>Victoria Police, Department of Transport, Victoria</li>
+                <li>Queensland Police Service, Department of Transport and Main Roads, Queensland</li>
+                <li>South Australia Police, Department of Infrastructure and Transport, SA</li>
+                <li>Western Australia Police Force, Main Roads WA</li>
+                <li>Tasmania Police, Department of State Growth, Tasmania</li>
+                <li>Northern Territory Police, Department of Infrastructure, Planning and Logistics, NT</li>
+                <li>Australian Federal Police, Transport Canberra and City Services Directorate, ACT</li>
+                </ul>
+            </section>
+
+            <hr class="section-divider">
+
+            <section class="section section-narrow">
                 <h2>Questions this dashboard helps answer</h2>
                 <div class="cards">
                 <article class="card">
@@ -79,11 +155,11 @@
 
         <!-- FINES FROM SPEEDING -->
         <section id="view-speeding" class="view">
-            <section class="section section--narrow">
+            <section class="section section-narrow">
                 <h2>Fines from speeding</h2>
-                <p class="muted">Annual speeding infringements by detection method and jurisdiction, 2008-2024.</p>
+                <p class="muted">Annual speeding infringements by detection method and jurisdiction, 2008-2022. Monthly speeding infringements by detection method and jurisdiction, 2023-2024. </p>
             </section>
-            <section class="section section--chart">
+            <section class="section section-chart">
                 <!-- Your D3 file will target this -->
                 <div id="chart-speeding" class="responsive-svg-container"></div>
             </section>
@@ -91,44 +167,44 @@
 
             <!-- FINES BY JURISDICTION -->
             <section id="view-jurisdiction" class="view">
-            <section class="section section--narrow">
+            <section class="section section-narrow">
                 <h2>Fines by jurisdiction</h2>
                 <p class="muted">Annual speeding fines by state and territory, showing cross-jurisdiction trends.</p>
             </section>
-            <section class="section section--chart">
+            <section class="section section-chart">
                 <div id="chart-jurisdiction" class="responsive-svg-container"></div>
             </section>
             </section>
 
             <!-- FINES BY DETECTION TYPE -->
             <section id="view-detection" class="view">
-            <section class="section section--narrow">
+            <section class="section section-narrow">
                 <h2>Fines by detection type</h2>
                 <p class="muted">Fixed cameras, mobile cameras, police-issued fines and other detection methods.</p>
             </section>
-            <section class="section section--chart">
+            <section class="section section-chart">
                 <div id="chart-detection" class="responsive-svg-container"></div>
             </section>
             </section>
 
             <!-- FINES BY AGE GROUP -->
             <section id="view-age" class="view">
-            <section class="section section--narrow">
+            <section class="section section-narrow">
                 <h2>Fines by age group</h2>
                 <p class="muted">Speeding fines broken down by driver age group across Australian jurisdictions.</p>
             </section>
-            <section class="section section--chart">
+            <section class="section section-chart">
                 <div id="chart-age" class="responsive-svg-container"></div>
             </section>
             </section>
 
             <!-- FINES VS ALCOHOL DETECTIONS -->
             <section id="view-alcohol" class="view">
-            <section class="section section--narrow">
+            <section class="section section-narrow">
                 <h2>Fines vs positive alcohol detections</h2>
                 <p class="muted">Relationship between speeding infringements and positive alcohol tests.</p>
             </section>
-            <section class="section section--chart">
+            <section class="section section-chart">
                 <div id="chart-alcohol" class="responsive-svg-container"></div>
             </section>
         </section>
@@ -144,8 +220,8 @@
     <!-- D3 Library -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="feature/shared-constants.js"></script>
-    <script src="feature/homepage.js"></script>
     <script src="feature/load-data.js"></script>
+    <script src="feature/homepage.js"></script>
     <script src="feature/finesFromSpeeding-multiLine.js"></script>
     <script src="feature/finesByJurisdiction-multiLine.js"></script>
     <script src="feature/finesByAgeGroup-bar.js"></script>
