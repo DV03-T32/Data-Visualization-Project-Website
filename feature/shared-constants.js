@@ -32,5 +32,20 @@ window.CHART_NOTES_HTML = `
     <li><strong>Western Australia:</strong> Detection modes include on-the-spot (OTS), mobile speed cameras, fixed cameras, average speed cameras and red-light cameras.</li>
 
     <li><strong>Missing data:</strong> ACT data is unavailable for 2022. Victorian 2024 volumes were lower due to Protected Industrial Action (PIA).</li>
+
+    <li><strong>Detection method changes:</strong> From 2023 onward, jurisdictions report more detailed camera types (average speed, red-light, fixed, mobile). Earlier years contain fewer categories, limiting direct comparison.</li>
+
+    <li><strong>Varying reporting practices:</strong> Some states submitted partial or delayed monthly data during the transition to the new schema (2023+), causing gaps or irregularities in monthly patterns.</li>
+
+    <li><strong>Technology differences:</strong> Higher infringement counts may reflect improved camera networks rather than changes in driver behaviour. States that upgraded equipment earlier (e.g., VIC, NSW) detect more offences.</li>
+
+    <li><strong>Enforcement intensity differences:</strong> Remote or sparsely populated regions (e.g., WA, NT) have fewer cameras, which may under-represent actual speeding behaviour compared to urban states.</li>
+
+    <li><strong>COVID-19 impacts:</strong> Enforcement activity dipped in parts of 2020–2021 due to operational restrictions, potentially reducing fines in those years.</li>
+
+    <li><strong>Data submission differences:</strong> Jurisdictions use different internal reporting cycles and systems, which BITRE standardises before publication. Minor timing inconsistencies may remain between states.</li>
+
+    <li><strong>Charges and arrests:</strong> Enforcement outcomes (e.g., number of charges) were only added to the dataset from 2023. Earlier “zero” values generally indicate “not recorded,” not true zero offences.</li>
+
   </ul>
 `;
