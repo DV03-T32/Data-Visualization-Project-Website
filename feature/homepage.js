@@ -48,6 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    if (id === "jurisdiction" && !rendered.jurisdiction) {
+      window.renderFinesByJurisdictionMultiLine("#chart-jurisdiction");
+      rendered.jurisdiction = true;
+    }
+
+
     // Trigger detection bar chart when view is first shown
     if (id === "detection" && !rendered.detection) {
       if (window.renderFinesByDetectionBar) {
