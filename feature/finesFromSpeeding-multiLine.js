@@ -103,18 +103,6 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
       return { group, button, menu };
     }
 
-    // Jurisdiction pretty names
-  const JURIS_NAMES = {
-    "ACT": "Australian Capital Territory",
-    "NSW": "New South Wales",
-    "NT": "Northern Territory",
-    "QLD": "Queensland",
-    "SA": "South Australia",
-    "TAS": "Tasmania",
-    "VIC": "Victoria",
-    "WA": "Western Australia",
-  };
-
     // Jurisdiction filter: static list
     const jurisFilter = createDropdownFilter(
       filterRow,
@@ -323,8 +311,20 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
     // -------------------------------
     const layout = container.append("div").attr("class", "chart-layout");
 
-    // Summary panel (for monthly mode)
     const summaryPanel = layout.append("div").attr("class", "summary-panel");
+
+    // Chart SVG
+    const width = 900;
+    const height = 420;
+    const margin = { top: 30, right: 200, bottom: 50, left: 80 };
+
+    const svg = layout
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    // append legend LAST so it appears on the RIGHT
+    const legendBox = layout.append("div").attr("class", "legend-box");
 
     const summaryTotal = summaryPanel
       .append("div")
@@ -364,16 +364,6 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
       .attr("class", "summary-box-label")
       .text("Camera fines");
 
-    // Chart SVG
-    const width = 900;
-    const height = 420;
-    const margin = { top: 30, right: 90, bottom: 50, left: 80 };
-
-    const svg = layout
-      .append("svg")
-      .attr("width", width)
-      .attr("height", height);
-
     const chartArea = svg.append("g");
 
     const xAxisGroup = svg
@@ -388,22 +378,23 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
     const hoverLine = chartArea
       .append("line")
       .attr("class", "hover-line")
-      .attr("stroke", "#999")
+      .attr("stroke", "#888")
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "4,4")
       .style("opacity", 0);
 
-    // Tooltip (for the chart lines)
-    const tooltip = container
+    const tooltipBar = container
       .append("div")
-      .attr("class", "tooltip")
+      .attr("class", "tooltip-bar")
       .style("position", "absolute")
       .style("pointer-events", "none")
       .style("background", "white")
       .style("border", "1px solid #000")
-      .style("padding", "6px 8px")
+      .style("padding", "6px 10px")
+      .style("min-width", "180px")
       .style("font-size", "0.8rem")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .style("z-index", 11);
 
     // Colour scale for detection methods
     const color = d3.scaleOrdinal().range([
@@ -500,7 +491,10 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
       // Update summary panel (handles annual vs monthly)
       updateSummary(baseData, isAnnual, selectedYear);
 
-      chartArea.selectAll("*").remove();
+      chartArea
+        .selectAll(".series-line, .point, .y-grid, .hover-capture")
+        .remove();
+
       if (!baseData.length) {
         xAxisGroup.selectAll("*").remove();
         yAxisGroup.selectAll("*").remove();
@@ -529,8 +523,8 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
 
       color.domain(series.map((s) => s.method));
 
-      // Compute global min/max year from the annual dataset 
-      const MIN_YEAR = d3.min(annualData, (d) => d.year); 
+      // Compute global min/max year from the annual dataset
+      const MIN_YEAR = d3.min(annualData, (d) => d.year);
       const MAX_YEAR = d3.max(annualData, (d) => d.year);
 
       const allT = series.flatMap((s) => s.values.map((v) => v.t));
@@ -538,7 +532,7 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
 
       const xScale = d3
         .scaleLinear()
-        .domain(isAnnual ? [MIN_YEAR, MAX_YEAR] : [1, 12]) // 
+        .domain(isAnnual ? [MIN_YEAR, MAX_YEAR] : [1, 16.5]) // 17 because chart was cut off at october
         .range([margin.left, width - margin.right]);
 
       const yScale = d3
@@ -555,7 +549,7 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         : d3
             .axisBottom(xScale)
             .ticks(12)
-            .tickFormat((d) => monthNames[d - 1]);     
+            .tickFormat((d) => monthNames[d - 1]);
 
       const yAxis = d3.axisLeft(yScale).ticks(8).tickFormat(d3.format(","));
 
@@ -600,6 +594,27 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         }))
       );
 
+      // -----------------------------
+      // Legend (detection methods)
+      // -----------------------------
+      legendBox.selectAll("*").remove(); // clear old legend
+
+      const legendItems = legendBox
+        .selectAll(".legend-item")
+        .data(series)
+        .join("div")
+        .attr("class", "legend-item");
+
+      legendItems
+        .append("div")
+        .attr("class", "legend-color")
+        .style("background", (d) => color(d.method));
+
+      legendItems
+        .append("div")
+        .attr("class", "legend-label")
+        .text((d) => d.method);
+
       chartArea
         .selectAll(".point")
         .data(allPoints)
@@ -626,7 +641,7 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         .attr("height", height - margin.top - margin.bottom)
         .attr("fill", "transparent")
         .on("mousemove", (event) => {
-          const [mx] = d3.pointer(event, svg.node());
+          const [mx] = d3.pointer(event, chartArea.node());
           const tValue = xScale.invert(mx);
 
           const closest = uniqueT.reduce((a, b) =>
@@ -640,7 +655,8 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
             .attr("x2", cx)
             .attr("y1", margin.top)
             .attr("y2", height - margin.bottom)
-            .style("opacity", 1);
+            .style("opacity", 1)
+            .raise();
 
           const rows = allPoints.filter((d) => d.t === closest);
 
@@ -651,27 +667,37 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
             header = `${monthNames[closest - 1]} ${selectedYear}`;
           }
 
-          const linesHtml = rows
-            .sort((a, b) => d3.descending(a.fines, b.fines))
-            .map(
-              (d) =>
-                `<span style="display:inline-block;width:10px;height:10px;background:${color(
-                  d.method
-                )};margin-right:4px;"></span>${
-                  d.method
-                }: ${d.fines.toLocaleString()}`
-            )
-            .join("<br>");
+          // Tooltip bar (floating legend)
+          let barHTML = `<div><strong>${header}</strong></div>`;
 
-          tooltip
+          rows
+            .sort((a, b) => d3.descending(a.fines, b.fines))
+            .forEach((d) => {
+              barHTML += `
+                <div class="tooltip-bar-row">
+                  <div class="tooltip-bar-color" style="background:${color(
+                    d.method || d.juris
+                  )}"></div>
+                  <div>${
+                    d.method || JURIS_NAMES[d.juris]
+                  }: ${d.fines.toLocaleString()}</div>
+                </div>
+              `;
+            });
+
+          // Align tooltip with the vertical hover line
+          const svgRect = svg.node().getBoundingClientRect();
+          const leftPos = svgRect.left + cx + 12; // tooltip just right of the hover line
+
+          tooltipBar
             .style("opacity", 1)
-            .html(`<strong>${header}</strong><br>${linesHtml}`)
-            .style("left", `${event.pageX + 12}px`)
-            .style("top", `${event.pageY - 40}px`);
+            .html(barHTML)
+            .style("left", `${leftPos}px`)
+            .style("top", `${event.pageY - 30}px`);
         })
         .on("mouseleave", () => {
           hoverLine.style("opacity", 0);
-          tooltip.style("opacity", 0);
+          tooltipBar.style("opacity", 0);
         });
 
       // Show/hide year filter
@@ -681,6 +707,11 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         yearGroup.style("visibility", "visible");
       }
     }
+
+    container
+      .append("div")
+      .attr("class", "chart-notes small-text")
+      .html(window.CHART_NOTES_HTML);
 
     // -------------------------------
     // 5. Event wiring
