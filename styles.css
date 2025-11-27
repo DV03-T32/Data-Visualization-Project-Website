@@ -1,0 +1,364 @@
+@import url('https://fonts.cdnfonts.com/css/avenir');
+
+:root {
+  --bg: #ffffff;
+  --fg: #000000;
+  --muted: #555555;
+  --border: #e0e0e0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Avenir', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Generic centring container */
+.header-inner,
+.hero-inner,
+.nav-inner,
+.section-chart,
+.footer-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 1rem 1rem;
+}
+
+.brand-mark {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-right: 0.3rem;
+}
+
+.brand-text {
+  font-weight: 400;
+}
+
+/* Hero */
+.hero {
+  padding: 3.5rem 1rem 2rem;
+}
+
+.hero-tag {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.hero-title {
+  margin: 0 0 0.8rem;
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+}
+
+.hero-subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Nav under hero */
+.main-nav {
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-inner {
+  display: flex;        
+  gap: 1.5rem;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--fg);
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid transparent;
+}
+
+.nav-link:hover,
+.nav-link.is-active {
+  border-bottom-color: var(--fg); /* black underline */
+}
+
+/* Views */
+.view {
+  display: none;
+}
+
+.view.is-active {
+  display: block;
+}
+
+/* Sections */
+.section {
+  padding: 2.5rem 1rem;
+}
+
+.section-narrow {
+  max-width: 960px;
+  margin: 0 auto;     /* keeps the block centred on screen */
+  text-align: left;   /* but text inside is left-aligned */
+}
+
+
+.section-narrow p {
+  max-width: 700px;
+margin: 0.75rem 0;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.card {
+  border: 1px solid var(--border);
+  padding: 1rem;
+}
+
+/* Chart placeholder */
+.section-chart {
+  padding-top: 1rem;
+}
+
+.chart-placeholder {
+  border: 1px solid var(--fg);
+  padding: 2rem;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1rem 2rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small-text {
+  font-size: 0.9rem;
+}
+
+.page {
+  padding-bottom: 3rem;
+}
+
+.section-divider {
+  border: 0;
+  border-top: 2px solid #000;         
+  max-width: 50%;    
+  margin: 0.8rem auto 1rem; 
+}
+
+.bullet-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.nested-bullet {
+  list-style-type: circle;
+  padding-left: 1.5rem;
+  margin-top: 0.3rem;
+}
+
+/* ---- Chart controls & filters for speeding multi-line ---- */
+
+.chart-controls {
+  max-width: 960px;
+  margin: 0 auto 0.75rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.speed-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.toggle-btn {
+  border: 1px solid var(--border);
+  background: #f7f7f7;
+  padding: 0.3rem 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.toggle-btn.active {
+  background: #000;
+  color: #fff;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.filter-group {
+  position: relative;
+  min-width: 220px;
+  text-align: left;
+}
+
+.filter-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+/* Button with ▼ arrow */
+.filter-button {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.35rem 1.6rem 0.35rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.filter-button::after {
+  content: "▾";
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+}
+
+.filter-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 100%;
+}
+
+.filter-group.is-open .filter-menu {
+  display: block;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.15rem 0;
+  font-size: 0.85rem;
+}
+
+.filter-year-select {
+  width: 100%;
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.6rem;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* Tooltip inside chart-speeding */
+#chart-speeding .tooltip {
+  white-space: nowrap;
+}
+
+/* Layout for summary panel + chart */
+.chart-layout {
+  max-width: 960px;
+  margin: 0 auto 2rem;
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.summary-panel {
+  min-width: 190px;
+  border: 1px solid var(--border);
+  padding: 0.8rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.summary-total {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.summary-subtitle {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.summary-breakdown {
+  display: flex;
+  gap: 0.6rem;
+  background: #111;
+  color: #fff;
+  padding: 0.5rem 0.6rem;
+}
+
+.summary-box {
+  flex: 1;
+}
+
+.summary-box-value {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.summary-box-label {
+  font-size: 0.75rem;
+}
+
+/* Stack vertically on small screens */
+@media (max-width: 800px) {
+  .chart-layout {
+    flex-direction: column;
+  }
+
+  .summary-panel {
+    order: -1; /* panel above chart on small screens */
+  }
+}
