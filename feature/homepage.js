@@ -47,6 +47,30 @@ document.addEventListener("DOMContentLoaded", () => {
         rendered.speeding = true;
       }
     }
+
+    // Trigger detection bar chart when view is first shown
+    if (id === "detection" && !rendered.detection) {
+      if (window.renderFinesByDetectionBar) {
+        window.renderFinesByDetectionBar("#chart-detection");
+        rendered.detection = true;
+      }
+    }
+
+    // Trigger age-group bar chart when view is first shown
+    if (id === "age" && !rendered.age) {
+      if (window.renderFinesByAgeGroupBar) {
+        window.renderFinesByAgeGroupBar("#chart-age");
+        rendered.age = true;
+      }
+    }
+
+    // Trigger speeding vs alcohol stacked bar chart when view is first shown
+    if (id === "alcohol" && !rendered.alcohol) {
+      if (window.renderSpeedingVsAlcoholStackedBar) {
+        window.renderSpeedingVsAlcoholStackedBar("#chart-alcohol");
+        rendered.alcohol = true;
+      }
+    }
   }
 
   // ----- Nav click behaviour -----
