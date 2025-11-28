@@ -8,7 +8,7 @@ window.NAV_ITEMS = [
   { id: "alcohol", label: "Fines vs positive alcohol detections" },
 ];
 
-// Global jurisdiction pretty names
+// Global jurisdiction names
 window.JURIS_NAMES = {
   ACT: "Australian Capital Territory",
   NSW: "New South Wales",
