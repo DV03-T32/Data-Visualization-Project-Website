@@ -1,364 +1,658 @@
 // feature/finesByDetection-bar.js
-// Unified toolbox, BW dropdowns, annual dual-slider with quick selects, monthly simple dropdowns.
-// Drop-in replacement.
+// Clean, standardised bar chart following the SAME architecture as the multiline charts.
 
 (function () {
-  const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const SLIDER_MIN = 2008;
-  const SLIDER_MAX = 2024;
+  const MONTH_NAMES = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
-  function fmt(n){ return n == null ? "0" : n.toLocaleString(); }
-
-  // create black & white dropdown (multi or single)
-  function createBWDropdown(parent, labelText, multi = true) {
-    const group = parent.append('div').attr('class','filter-group bw');
-    group.append('div').attr('class','filter-label').text(labelText);
-    const button = group.append('button').attr('type','button').attr('class','filter-button bw-btn').text('All');
-    const menu = group.append('div').attr('class','filter-menu bw-menu');
-    button.on('click', (e) => { e.stopPropagation(); const open = group.classed('is-open'); d3.selectAll('.filter-group').classed('is-open', false); group.classed('is-open', !open); });
-    return { group, button, menu, multi };
+  function fmt(n) {
+    return n ? n.toLocaleString() : "0";
   }
 
-  // attach checkbox logic (same behavior as other charts)
-  function attachCheckboxLogic(menu, button, selectionSet, defaultLabel, onChangeExtra) {
-    const inputs = menu.selectAll('input');
-    inputs.on('change', function() {
+  // ---------------------------------------------------------
+  // CREATE B/W DROPDOWN
+  // ---------------------------------------------------------
+  function createBWDropdown(parent, labelText, multi = true) {
+    const g = parent.append("div").attr("class", "filter-group bw");
+    g.append("div").attr("class", "filter-label").text(labelText);
+
+    const btn = g
+      .append("button")
+      .attr("type", "button")
+      .attr("class", "filter-button bw-btn")
+      .text("All");
+
+    const menu = g.append("div").attr("class", "filter-menu bw-menu");
+
+    // "All" option
+    const all = menu.append("label").attr("class", "filter-option");
+    all
+      .append("input")
+      .attr("type", "checkbox")
+      .attr("value", "__all__")
+      .property("checked", true);
+    all.append("span").text("All");
+
+    btn.on("click", (e) => {
+      e.stopPropagation();
+      const opened = g.classed("is-open");
+      d3.selectAll(".filter-group").classed("is-open", false);
+      g.classed("is-open", !opened);
+    });
+
+    return { group: g, button: btn, menu, multi };
+  }
+
+  // ---------------------------------------------------------
+  // CHECKBOX LOGIC
+  // ---------------------------------------------------------
+  function attachCheckboxLogic(
+    menu,
+    button,
+    selectionSet,
+    label,
+    onChangeExtra
+  ) {
+    const inputs = menu.selectAll("input");
+
+    inputs.on("change", function () {
       const val = this.value;
-      if (val === '__all__') {
-        const checked = this.checked;
+
+      // clicked ALL
+      if (val === "__all__") {
+        const ch = this.checked;
         selectionSet.clear();
-        inputs.each(function(){ if (this.value !== '__all__') this.checked = false; });
-        if (!checked) this.checked = true;
+
+        inputs.each(function () {
+          if (this.value !== "__all__") this.checked = false;
+        });
+
+        if (!ch) this.checked = true;
       } else {
-        inputs.each(function(){ if (this.value === '__all__') this.checked = false; });
-        if (this.checked) selectionSet.add(val); else selectionSet.delete(val);
+        // not ALL
+        inputs.each(function () {
+          if (this.value === "__all__") this.checked = false;
+        });
+
+        if (this.checked) selectionSet.add(val);
+        else selectionSet.delete(val);
+
         if (selectionSet.size === 0) {
-          inputs.each(function(){ if (this.value === '__all__') this.checked = true; });
+          inputs.each(function () {
+            if (this.value === "__all__") this.checked = true;
+          });
         }
       }
-      // label
-      if (selectionSet.size === 0) button.text(defaultLabel + ' ');
-      else if (selectionSet.size === 1) button.text(Array.from(selectionSet)[0] + ' ');
-      else button.text(`${selectionSet.size} selected `);
+
+      if (selectionSet.size === 0) button.text(label);
+      else if (selectionSet.size === 1)
+        button.text(Array.from(selectionSet)[0]);
+      else button.text(selectionSet.size + " selected");
+
       if (onChangeExtra) onChangeExtra();
     });
-    // initial
-    button.text(defaultLabel + ' ');
+
+    button.text(label);
   }
 
-  window.renderFinesByDetectionBar = function(selector) {
-    const container = d3.select(selector);
-    container.selectAll('*').remove();
+  // ---------------------------------------------------------
+  // MAIN RENDER FUNCTION
+  // ---------------------------------------------------------
+  window.renderFinesByDetectionBar = function (containerSelector) {
+    SpeedingData.loadAll().then(({ annual, monthly }) => {
+      // ---------------------------------------------------------
+      // 1. PREP DATA
+      // ---------------------------------------------------------
+      const annualData = annual.filter((d) => d.year <= 2023);
+      const monthlyData = monthly.filter((d) => d.year >= 2023);
 
-    // Controls
-    const controls = container.append('div').attr('class','chart-controls');
-    const toggle = controls.append('div').attr('class','speed-toggle');
-    const btnAnnual = toggle.append('button').attr('class','toggle-btn active').text('Annual');
-    const btnMonthly = toggle.append('button').attr('class','toggle-btn').text('Monthly');
+      const allJurisdictions = Array.from(
+        new Set([...annualData, ...monthlyData].map((d) => d.jurisdiction))
+      ).sort();
+      const allMethods = Array.from(
+        new Set([...annualData, ...monthlyData].map((d) => d.detectionMethod))
+      ).sort();
+      const monthlyYears = Array.from(
+        new Set(monthlyData.map((d) => d.year))
+      ).sort();
 
-    const filterRow = controls.append('div').attr('class','filter-row');
+      const selectedJurisdictions = new Set(); // empty = All
+      const selectedMethods = new Set(); // empty = All
 
-    // Slider block (kept, but hidden when monthly)
-    const sliderBlock = filterRow.append('div').attr('class','filter-group slider-group');
-    sliderBlock.append('div').attr('class','filter-label').text('Year range');
-    const sliderHtml = `
-      <div class="dual-slider-wrap" style="display:flex;align-items:center;gap:10px;">
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <input id="det_yearStart" type="range" min="${SLIDER_MIN}" max="${SLIDER_MAX}" step="1" value="${SLIDER_MIN}" />
-          <small id="det_yearStartLabel">${SLIDER_MIN}</small>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <input id="det_yearEnd" type="range" min="${SLIDER_MIN}" max="${SLIDER_MAX}" step="1" value="${SLIDER_MAX}" />
-          <small id="det_yearEndLabel">${SLIDER_MAX}</small>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <button id="det_quick5" class="quick-btn tiny">Last 5y</button>
-          <button id="det_quick10" class="quick-btn tiny">Last 10y</button>
-          <button id="det_quickAll" class="quick-btn tiny">All</button>
-        </div>
-      </div>
-    `;
-    sliderBlock.append('div').html(sliderHtml);
+      let mode = "annual";
 
-    // Jurisdiction dropdown (BW)
-    const jurisDD = createBWDropdown(filterRow, 'Jurisdiction', true);
+      // ---------------------------------------------------------
+      // 2. BUILD UI
+      // ---------------------------------------------------------
+      const container = d3.select(containerSelector);
+      container.selectAll("*").remove();
 
-    // Detection method dropdown (BW)
-    const methodDD = createBWDropdown(filterRow, 'Detection methods', true);
+      const controls = container.append("div").attr("class", "chart-controls");
 
-    // Year selector for monthly (single)
-    const yearGroup = filterRow.append('div').attr('class','filter-group');
-    yearGroup.append('div').attr('class','filter-label').text('Year (monthly)');
-    const yearSelect = yearGroup.append('select').attr('class','filter-year-select');
+      const toggle = controls.append("div").attr("class", "speed-toggle");
+      const btnAnnual = toggle
+        .append("button")
+        .attr("class", "toggle-btn active")
+        .text("Annual");
+      const btnMonthly = toggle
+        .append("button")
+        .attr("class", "toggle-btn")
+        .text("Monthly");
 
-    // Month selector for monthly
-    const monthGroup = filterRow.append('div').attr('class','filter-group');
-    monthGroup.append('div').attr('class','filter-label').text('Month');
-    const monthSelect = monthGroup.append('select').attr('class','filter-year-select');
-    monthSelect.selectAll('option').data(['All'].concat(MONTH_LABELS)).enter().append('option').attr('value',(d,i)=>i).text(d=>d);
-    monthSelect.node().value = 0;
+      const filterRow = controls.append("div").attr("class", "filter-row");
 
-    container.append('p').attr('class','toggle-note small-text')
-      .text('Annual: grouped bars across selected year range. Monthly: choose year + month.');
+      // Jurisdiction dropdown
+      const jurisDD = createBWDropdown(filterRow, "Jurisdiction", true);
 
-    // Layout & SVG
-    const layout = container.append('div').attr('class','chart-layout');
-    const svgW = 960, svgH = 480;
-    const margin = { top: 40, right: 20, bottom: 120, left: 120 };
-    const svg = layout.append('svg').attr('viewBox', `0 0 ${svgW} ${svgH}`).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','auto');
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-    const innerW = svgW - margin.left - margin.right;
-    const innerH = svgH - margin.top - margin.bottom;
-    const xAxisG = svg.append('g').attr('class','x-axis').attr('transform', `translate(${margin.left},${svgH - margin.bottom})`);
-    const yAxisG = svg.append('g').attr('class','y-axis').attr('transform', `translate(${margin.left},${margin.top})`);
+      // Method dropdown
+      const methodDD = createBWDropdown(filterRow, "Detection method", true);
 
-    const tooltip = container.append('div').attr('class','tooltip').style('position','absolute').style('pointer-events','none').style('background','#fff').style('border','1px solid #111').style('padding','8px').style('font-size','0.9rem').style('opacity',0).style('border-radius','6px').style('box-shadow','0 2px 8px rgba(0,0,0,0.12)');
+      // Monthly-only: year dropdown
+      const yearGroup = filterRow.append("div").attr("class", "filter-group");
+      yearGroup
+        .append("div")
+        .attr("class", "filter-label")
+        .text("Year (monthly)");
+      const yearSelect = yearGroup
+        .append("select")
+        .attr("class", "filter-year-select");
+      yearGroup.style("display", "none");
 
-    const color = d3.scaleOrdinal(d3.schemeSet2);
+      yearSelect
+        .selectAll("option")
+        .data(monthlyYears)
+        .enter()
+        .append("option")
+        .attr("value", (d) => d)
+        .text((d) => d);
 
-    // load data
-    window.SpeedingData.loadExtendedAnnualWithMonthly().then(({ annual, monthly }) => {
-      const annualData = (annual || []).map(d => ({ year: +d.year, jurisdiction: d.jurisdiction, detectionMethod: d.detectionMethod, fines: +d.fines }));
-      const monthlyData = (monthly || []).map(d => ({ year: +d.year, month: d.month != null && d.month !== '' ? +d.month : null, jurisdiction: d.jurisdiction, detectionMethod: d.detectionMethod, fines: +d.fines }));
+      // Monthly-only: month dropdown
+      const monthGroup = filterRow.append("div").attr("class", "filter-group");
+      monthGroup.append("div").attr("class", "filter-label").text("Month");
+      const monthSelect = monthGroup
+        .append("select")
+        .attr("class", "filter-year-select");
+      monthGroup.style("display", "none");
 
-      const allJurisdictions = Array.from(new Set([...annualData, ...monthlyData].map(d => d.jurisdiction))).sort();
-      const allMethods = Array.from(new Set([...annualData, ...monthlyData].map(d => d.detectionMethod))).sort();
-      const monthlyYears = Array.from(new Set(monthlyData.map(d => d.year))).sort((a,b)=>a-b);
+      monthSelect
+        .selectAll("option")
+        .data(["All"].concat(MONTH_NAMES))
+        .enter()
+        .append("option")
+        .attr("value", (d, i) => i) // 0 = All, 1..12 = months
+        .text((d) => d);
 
-      // state
-      let mode = 'annual';
-      const selectedJurisdictions = new Set(); // empty = all
-      const selectedMethods = new Set(); // empty = all
-      let sliderStart = SLIDER_MIN, sliderEnd = SLIDER_MAX;
-      if (sliderEnd < SLIDER_MIN) sliderEnd = SLIDER_MIN;
+      container
+        .append("p")
+        .attr("class", "toggle-note small-text")
+        .text("Annual: grouped by year. Monthly: choose year + month.");
 
-      // populate jurisdiction menu
-      jurisDD.menu.selectAll('*').remove();
-      const jurisAll = jurisDD.menu.append('label').attr('class','filter-option');
-      jurisAll.append('input').attr('type','checkbox').attr('value','__all__').property('checked', true);
-      jurisAll.append('span').text('All');
-      const jurisItems = jurisDD.menu.selectAll('label.item').data(allJurisdictions).enter().append('label').attr('class','filter-option item');
-      jurisItems.append('input').attr('type','checkbox').attr('value', d=>d);
-      jurisItems.append('span').text(d=>d);
-      attachCheckboxLogic(jurisDD.menu, jurisDD.button, selectedJurisdictions, 'All', updateMethodOptions);
+      // ---------------------------------------------------------
+      // 3. CHART LAYOUT
+      // ---------------------------------------------------------
+      const layout = container.append("div").attr("class", "chart-layout");
+      const legendBox = layout.append("div").attr("class", "legend-box");
 
-      // populate method menu (initial based on full set)
-      methodDD.menu.selectAll('*').remove();
-      const methodAll = methodDD.menu.append('label').attr('class','filter-option');
-      methodAll.append('input').attr('type','checkbox').attr('value','__all__').property('checked', true);
-      methodAll.append('span').text('All');
-      const methodItems = methodDD.menu.selectAll('label.item').data(allMethods).enter().append('label').attr('class','filter-option item');
-      methodItems.append('input').attr('type','checkbox').attr('value', d=>d);
-      methodItems.append('span').text(d=>d);
-      attachCheckboxLogic(methodDD.menu, methodDD.button, selectedMethods, 'All', null);
+      const svgW = 960,
+        svgH = 500;
+      const margin = { top: 40, right: 160, bottom: 120, left: 120 };
 
-      // populate yearSelect for monthly
-      yearSelect.selectAll('option').remove();
-      yearSelect.selectAll('option').data(monthlyYears).enter().append('option').attr('value', d=>d).text(d=>d);
-      if (monthlyYears.length) yearSelect.node().value = monthlyYears[monthlyYears.length-1];
+      const svg = layout
+        .append("svg")
+        .attr("viewBox", `0 0 ${svgW} ${svgH}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .style("width", "100%")
+        .style("height", "auto");
 
-      // slider elements
-      const startEl = document.getElementById('det_yearStart');
-      const endEl = document.getElementById('det_yearEnd');
-      const startLabel = document.getElementById('det_yearStartLabel');
-      const endLabel = document.getElementById('det_yearEndLabel');
-      const q5 = document.getElementById('det_quick5');
-      const q10 = document.getElementById('det_quick10');
-      const qAll = document.getElementById('det_quickAll');
+      const g = svg
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      function clampAndSync() {
-        let s = +startEl.value, e = +endEl.value;
-        if (s > e) { const t = s; s = e; e = t; }
-        sliderStart = Math.max(SLIDER_MIN, Math.min(SLIDER_MAX, s));
-        sliderEnd = Math.max(SLIDER_MIN, Math.min(SLIDER_MAX, e));
-        startEl.value = sliderStart; endEl.value = sliderEnd;
-        startLabel.textContent = sliderStart; endLabel.textContent = sliderEnd;
-      }
+      const innerW = svgW - margin.left - margin.right;
+      const innerH = svgH - margin.top - margin.bottom;
 
-      startEl.addEventListener('input', () => { clampAndSync(); draw(); });
-      endEl.addEventListener('input', () => { clampAndSync(); draw(); });
+      const xAxisG = svg.append("g").attr("class", "x-axis");
+      const yAxisG = svg.append("g").attr("class", "y-axis");
 
-      q5.addEventListener('click', () => {
-        sliderEnd = SLIDER_MAX;
-        sliderStart = Math.max(SLIDER_MIN, SLIDER_MAX - 4);
-        startEl.value = sliderStart; endEl.value = sliderEnd;
-        startLabel.textContent = sliderStart; endLabel.textContent = sliderEnd;
-        draw();
-      });
-      q10.addEventListener('click', () => {
-        sliderEnd = SLIDER_MAX;
-        sliderStart = Math.max(SLIDER_MIN, SLIDER_MAX - 9);
-        startEl.value = sliderStart; endEl.value = sliderEnd;
-        startLabel.textContent = sliderStart; endLabel.textContent = sliderEnd;
-        draw();
-      });
-      qAll.addEventListener('click', () => {
-        sliderStart = SLIDER_MIN; sliderEnd = SLIDER_MAX;
-        startEl.value = sliderStart; endEl.value = sliderEnd;
-        startLabel.textContent = sliderStart; endLabel.textContent = sliderEnd;
-        draw();
-      });
+      const tooltip = container
+        .append("div")
+        .attr("class", "tooltip")
+        .style("position", "absolute")
+        .style("opacity", 0)
+        .style("pointer-events", "none")
+        .style("background", "#fff")
+        .style("border", "1px solid #111")
+        .style("padding", "8px")
+        .style("border-radius", "6px");
 
-      clampAndSync();
+      const color = d3.scaleOrdinal(d3.schemeSet2);
 
-      // update method options dynamically when jurisdiction/year changes
-      function updateMethodOptions() {
-        // base set depends on mode
-        let base = mode === 'annual' ? annualData.slice() : monthlyData.slice();
-        if (selectedJurisdictions.size > 0) base = base.filter(d => selectedJurisdictions.has(d.jurisdiction));
-        if (mode === 'monthly') {
-          const selY = +yearSelect.node().value;
-          base = base.filter(d => d.year === selY);
+      // ---------------------------------------------------------
+      // 4. POPULATE DROPDOWNS
+      // ---------------------------------------------------------
+      // Jurisdictions
+      jurisDD.menu.selectAll("*").remove();
+      const jAll = jurisDD.menu.append("label").attr("class", "filter-option");
+      jAll
+        .append("input")
+        .attr("type", "checkbox")
+        .attr("value", "__all__")
+        .property("checked", true);
+      jAll.append("span").text("All");
+
+      jurisDD.menu
+        .selectAll("label.item")
+        .data(allJurisdictions)
+        .enter()
+        .append("label")
+        .attr("class", "filter-option item")
+        .html((d) => `<input type="checkbox" value="${d}"><span>${d}</span>`);
+
+      // Methods
+      methodDD.menu.selectAll("*").remove();
+      const mAll = methodDD.menu.append("label").attr("class", "filter-option");
+      mAll
+        .append("input")
+        .attr("type", "checkbox")
+        .attr("value", "__all__")
+        .property("checked", true);
+      mAll.append("span").text("All");
+
+      methodDD.menu
+        .selectAll("label.item")
+        .data(allMethods)
+        .enter()
+        .append("label")
+        .attr("class", "filter-option item")
+        .html((d) => `<input type="checkbox" value="${d}"><span>${d}</span>`);
+
+      // ---------------------------------------------------------
+      // 5. UPDATE METHOD MENU (depends on juris + mode)
+      // ---------------------------------------------------------
+      function updateMethodMenu() {
+        let base = mode === "annual" ? annualData : monthlyData;
+
+        if (selectedJurisdictions.size > 0) {
+          base = base.filter((d) => selectedJurisdictions.has(d.jurisdiction));
         }
-        const methods = Array.from(new Set(base.map(d => d.detectionMethod))).sort();
-        methodDD.menu.selectAll('*').remove();
-        const allLab = methodDD.menu.append('label').attr('class','filter-option');
-        allLab.append('input').attr('type','checkbox').attr('value','__all__').property('checked', true);
-        allLab.append('span').text('All');
-        const items = methodDD.menu.selectAll('label.item').data(methods).enter().append('label').attr('class','filter-option item');
-        items.append('input').attr('type','checkbox').attr('value', d=>d);
-        items.append('span').text(d=>d);
+
+        if (mode === "monthly") {
+          const y = +yearSelect.node().value;
+          base = base.filter((d) => d.year === y);
+        }
+
+        const methods = Array.from(
+          new Set(base.map((d) => d.detectionMethod))
+        ).sort();
+
+        methodDD.menu.selectAll("*").remove();
+
+        const allOpt = methodDD.menu
+          .append("label")
+          .attr("class", "filter-option");
+        allOpt
+          .append("input")
+          .attr("type", "checkbox")
+          .attr("value", "__all__")
+          .property("checked", true);
+        allOpt.append("span").text("All");
+
+        methodDD.menu
+          .selectAll("label.item")
+          .data(methods)
+          .enter()
+          .append("label")
+          .attr("class", "filter-option item")
+          .html((d) => `<input type="checkbox" value="${d}"><span>${d}</span>`);
+
         selectedMethods.clear();
-        attachCheckboxLogic(methodDD.menu, methodDD.button, selectedMethods, 'All', null);
+        attachCheckboxLogic(
+          methodDD.menu,
+          methodDD.button,
+          selectedMethods,
+          "All",
+          draw // 🔑 re-draw whenever methods change
+        );
+
         color.domain(methods.length ? methods : allMethods);
       }
 
-      // draw function
+      // ---------------------------------------------------------
+      // 6. DRAW FUNCTION
+      // ---------------------------------------------------------
       function draw() {
-        g.selectAll('*').remove(); xAxisG.selectAll('*').remove(); yAxisG.selectAll('*').remove();
+        g.selectAll("*").remove();
+        xAxisG.selectAll("*").remove();
+        yAxisG.selectAll("*").remove();
+        legendBox.selectAll("*").remove();
 
-        // hide slider if monthly
-        if (mode === 'monthly') sliderBlock.style('display','none'); else sliderBlock.style('display','inline-block');
+        yearGroup.style(
+          "display",
+          mode === "monthly" ? "inline-block" : "none"
+        );
+        monthGroup.style(
+          "display",
+          mode === "monthly" ? "inline-block" : "none"
+        );
 
-        if (mode === 'annual') {
-          const years = d3.range(sliderStart, sliderEnd + 1);
-          // gather rows
-          let rows = annualData.slice();
-          if (selectedJurisdictions.size > 0) rows = rows.filter(d => selectedJurisdictions.has(d.jurisdiction));
-          if (selectedMethods.size > 0) rows = rows.filter(d => selectedMethods.has(d.detectionMethod));
-          // methods list to display
-          const methods = Array.from(new Set(rows.map(d => d.detectionMethod))).sort();
-          const methodsList = methods.length ? methods : color.domain().length ? color.domain() : allMethods;
-          // build per-year method aggregates (fill zero)
-          const dataByYear = years.map(y => {
-            const map = new Map(); methodsList.forEach(m => map.set(m, 0));
-            rows.filter(r => r.year === y).forEach(r => { map.set(r.detectionMethod, (map.get(r.detectionMethod)||0) + r.fines); });
-            return { year: y, methods: Array.from(map.entries()).map(([method, fines]) => ({ method, fines })) };
-          });
-
-          const x0 = d3.scaleBand().domain(years).range([0, innerW]).padding(0.18);
-          const x1 = d3.scaleBand().domain(methodsList).range([0, x0.bandwidth()]).padding(0.06);
-          const maxY = d3.max(dataByYear, d => d3.max(d.methods, m => m.fines)) || 1;
-          const y = d3.scaleLinear().domain([0, maxY * 1.1]).nice().range([innerH, 0]);
-
-          const xAxis = d3.axisBottom(x0).tickFormat(d3.format('d'));
-          const yAxis = d3.axisLeft(y).ticks(6).tickFormat(d => d.toLocaleString());
-
-          xAxisG.attr('transform', `translate(${margin.left},${svgH - margin.bottom})`).call(xAxis).selectAll('text').attr('transform','rotate(-25)').style('text-anchor','end');
-          yAxisG.attr('transform', `translate(${margin.left},${margin.top})`).call(yAxis);
-
-          const yearGroups = g.selectAll('g.year-group').data(dataByYear).join('g').attr('class','year-group').attr('transform', d => `translate(${x0(d.year)},0)`);
-
-          yearGroups.selectAll('rect').data(d => d.methods.map(m => ({ year:d.year, method:m.method, fines:m.fines }))).join(
-            enter => enter.append('rect')
-              .attr('x', d => x1(d.method))
-              .attr('y', y(0))
-              .attr('width', x1.bandwidth())
-              .attr('height', 0)
-              .attr('rx', 4)
-              .attr('fill', d => color(d.method))
-              .on('mousemove', function(event,d){
-                const header = `Year: ${d.year}`;
-                const html = `<strong>${header}</strong><br/><span style="display:inline-block;width:10px;height:10px;background:${color(d.method)};margin-right:6px"></span>${d.method}: ${fmt(d.fines)}`;
-                tooltip.style('opacity',1).html(html).style('left', (event.pageX+12)+'px').style('top',(event.pageY-40)+'px');
-              })
-              .on('mouseleave', ()=> tooltip.style('opacity',0))
-              .transition().duration(420).attr('y', d => y(d.fines)).attr('height', d => innerH - y(d.fines)),
-            update => update.transition().duration(300).attr('x', d => x1(d.method)).attr('y', d => y(d.fines)).attr('width', x1.bandwidth()).attr('height', d => innerH - y(d.fines)).attr('fill', d => color(d.method)),
-            exit => exit.transition().duration(200).attr('y', y(0)).attr('height', 0).remove()
+        // -----------------------------
+        // ANNUAL MODE
+        // -----------------------------
+        if (mode === "annual") {
+          let rows = annualData.filter(
+            (d) =>
+              d.year >= 2008 &&
+              d.year <= 2024 &&
+              (selectedJurisdictions.size === 0 ||
+                selectedJurisdictions.has(d.jurisdiction)) &&
+              (selectedMethods.size === 0 ||
+                selectedMethods.has(d.detectionMethod))
           );
 
-        } else {
-          // monthly: require year + month selection
-          const selYear = +yearSelect.node().value;
-          const selMonth = +monthSelect.node().value; // 0 => All months
-          if (!selYear) { return; }
+          const years = d3.range(2008, 2025);
+          const methods = Array.from(
+            new Set(rows.map((d) => d.detectionMethod))
+          ).sort();
+          color.domain(methods);
 
-          // filter rows by selYear and selected jurisdictions/methods
-          let rows = monthlyData.filter(d => d.year === selYear);
-          if (selectedJurisdictions.size > 0) rows = rows.filter(d => selectedJurisdictions.has(d.jurisdiction));
-          if (selMonth > 0) rows = rows.filter(d => d.month === selMonth);
-          if (selectedMethods.size > 0) rows = rows.filter(d => selectedMethods.has(d.detectionMethod));
+          const dataByYear = years.map((year) => {
+            const map = new Map(methods.map((m) => [m, 0]));
+            rows
+              .filter((r) => r.year === year)
+              .forEach((r) => {
+                map.set(
+                  r.detectionMethod,
+                  map.get(r.detectionMethod) + r.fines
+                );
+              });
+            return {
+              year,
+              methodsArray: methods.map((m) => ({
+                year,
+                method: m,
+                fines: map.get(m),
+              })),
+            };
+          });
 
-          const byMethod = d3.rollup(rows, v => d3.sum(v, d => d.fines), d => d.detectionMethod);
-          const methods = Array.from(new Set([...Array.from(byMethod.keys()), ...color.domain(), ...allMethods]));
-          const data = methods.map(m => ({ method: m, fines: byMethod.get(m) || 0 }));
+          const x0 = d3
+            .scaleBand()
+            .domain(years)
+            .range([0, innerW])
+            .padding(0.18);
 
-          const x = d3.scaleBand().domain(data.map(d=>d.method)).range([0, innerW]).padding(0.22);
-          const maxY = d3.max(data, d=>d.fines) || 1;
-          const y = d3.scaleLinear().domain([0, maxY * 1.1]).nice().range([innerH, 0]);
+          const x1 = d3
+            .scaleBand()
+            .domain(methods)
+            .range([0, x0.bandwidth()])
+            .padding(0.06);
 
-          const xAxis = d3.axisBottom(x);
-          const yAxis = d3.axisLeft(y).ticks(6).tickFormat(d => d.toLocaleString());
+          const maxY =
+            d3.max(dataByYear, (d) => d3.max(d.methodsArray, (m) => m.fines)) ||
+            1;
 
-          xAxisG.attr('transform', `translate(${margin.left},${svgH - margin.bottom})`).call(xAxis).selectAll('text').attr('transform','rotate(-25)').style('text-anchor','end');
-          yAxisG.attr('transform', `translate(${margin.left},${margin.top})`).call(yAxis);
+          const y = d3
+            .scaleLinear()
+            .domain([0, maxY * 1.1])
+            .nice()
+            .range([innerH, 0]);
 
-          const bars = g.selectAll('rect.bar').data(data, d=>d.method);
-          bars.exit().transition().duration(200).attr('y', y(0)).attr('height', 0).remove();
-          bars.enter().append('rect').attr('class','bar')
-            .attr('x', d => x(d.method))
-            .attr('y', y(0))
-            .attr('width', x.bandwidth())
-            .attr('height', 0)
-            .attr('rx', 5)
-            .attr('fill', d => color(d.method))
-            .on('mousemove', function(event,d){
-              const header = selMonth > 0 ? `${MONTH_LABELS[selMonth-1]} ${selYear}` : `${selYear} (All months)`;
-              const html = `<strong>${header}</strong><br/><span style="display:inline-block;width:10px;height:10px;background:${color(d.method)};margin-right:6px"></span>${d.method}: ${fmt(d.fines)}`;
-              tooltip.style('opacity',1).html(html).style('left', (event.pageX+12)+'px').style('top',(event.pageY-40)+'px');
+          // Axes
+          xAxisG
+            .attr(
+              "transform",
+              `translate(${margin.left},${svgH - margin.bottom})`
+            )
+            .call(d3.axisBottom(x0).tickFormat(d3.format("d")))
+            .selectAll("text")
+            .attr("transform", "rotate(-25)")
+            .style("text-anchor", "end");
+
+          yAxisG
+            .attr("transform", `translate(${margin.left},${margin.top})`)
+            .call(
+              d3
+                .axisLeft(y)
+                .ticks(6)
+                .tickFormat((d) => d.toLocaleString())
+            );
+
+          const yearGroups = g
+            .selectAll("g.year-group")
+            .data(dataByYear)
+            .enter()
+            .append("g")
+            .attr("class", "year-group")
+            .attr("transform", (d) => `translate(${x0(d.year)},0)`);
+
+          yearGroups
+            .selectAll("rect")
+            .data((d) => d.methodsArray)
+            .enter()
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", (d) => x1(d.method))
+            .attr("width", x1.bandwidth())
+            .attr("y", y(0))
+            .attr("height", 0)
+            .attr("rx", 4)
+            .attr("fill", (d) => color(d.method))
+            .on("mousemove", (event, d) => {
+              tooltip
+                .style("opacity", 1)
+                .html(
+                  `
+                  <strong>${d.year}</strong><br/>
+                  <span style="display:inline-block;width:10px;height:10px;background:${color(
+                    d.method
+                  )};margin-right:6px"></span>
+                  ${d.method}: ${fmt(d.fines)}
+                `
+                )
+                .style("left", event.pageX + 10 + "px")
+                .style("top", event.pageY - 40 + "px");
             })
-            .on('mouseleave', ()=> tooltip.style('opacity',0))
-            .transition().duration(420).attr('y', d => y(d.fines)).attr('height', d => innerH - y(d.fines));
+            .on("mouseleave", () => tooltip.style("opacity", 0))
+            .transition()
+            .duration(450)
+            .attr("y", (d) => y(d.fines))
+            .attr("height", (d) => innerH - y(d.fines));
 
-          bars.transition().duration(300).attr('x', d => x(d.method)).attr('y', d => y(d.fines)).attr('width', x.bandwidth()).attr('height', d => innerH - y(d.fines)).attr('fill', d => color(d.method));
+          // Legend
+          legendBox
+            .selectAll(".legend-item")
+            .data(methods)
+            .enter()
+            .append("div")
+            .attr("class", "legend-item")
+            .html(
+              (d) => `
+              <div class="legend-color" style="background:${color(d)}"></div>
+              <div class="legend-label">${d}</div>
+            `
+            );
+
+          return;
         }
-      } // draw end
 
-      // event wiring
-      btnAnnual.on('click', ()=> {
-        mode = 'annual';
-        btnAnnual.classed('active', true); btnMonthly.classed('active', false);
-        yearGroup.style('display','none'); monthGroup.style('display','none');
-        // ensure slider shows; and method options update
-        updateMethodOptions();
+        // -----------------------------
+        // MONTHLY MODE
+        // -----------------------------
+        const yearSel = +yearSelect.node().value;
+        const monthSel = +monthSelect.node().value;
+
+        let rows = monthlyData.filter(
+          (d) =>
+            d.year === yearSel &&
+            (selectedJurisdictions.size === 0 ||
+              selectedJurisdictions.has(d.jurisdiction)) &&
+            (selectedMethods.size === 0 ||
+              selectedMethods.has(d.detectionMethod))
+        );
+
+        if (monthSel !== 0) rows = rows.filter((d) => d.month === monthSel);
+
+        const methods = Array.from(
+          new Set(rows.map((r) => r.detectionMethod))
+        ).sort();
+        color.domain(methods);
+
+        const totals = methods.map((method) => ({
+          method,
+          fines: d3.sum(
+            rows.filter((r) => r.detectionMethod === method),
+            (r) => r.fines
+          ),
+        }));
+
+        const x = d3
+          .scaleBand()
+          .domain(methods)
+          .range([0, innerW])
+          .padding(0.2);
+
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(totals, (d) => d.fines) || 1])
+          .nice()
+          .range([innerH, 0]);
+
+        // Axes
+        xAxisG
+          .attr(
+            "transform",
+            `translate(${margin.left},${svgH - margin.bottom})`
+          )
+          .call(d3.axisBottom(x))
+          .selectAll("text")
+          .attr("transform", "rotate(-25)")
+          .style("text-anchor", "end");
+
+        yAxisG
+          .attr("transform", `translate(${margin.left},${margin.top})`)
+          .call(
+            d3
+              .axisLeft(y)
+              .ticks(6)
+              .tickFormat((d) => d.toLocaleString())
+          );
+
+        g.selectAll("rect")
+          .data(totals)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", (d) => x(d.method))
+          .attr("width", x.bandwidth())
+          .attr("y", y(0))
+          .attr("height", 0)
+          .attr("rx", 4)
+          .attr("fill", (d) => color(d.method))
+          .on("mousemove", (event, d) => {
+            const label =
+              monthSel === 0
+                ? `${yearSel} (All months)`
+                : `${MONTH_NAMES[monthSel - 1]} ${yearSel}`;
+            tooltip
+              .style("opacity", 1)
+              .html(
+                `<strong>${label}</strong><br/>${d.method}: ${fmt(d.fines)}`
+              )
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY - 40 + "px");
+          })
+          .on("mouseleave", () => tooltip.style("opacity", 0))
+          .transition()
+          .duration(450)
+          .attr("y", (d) => y(d.fines))
+          .attr("height", (d) => innerH - y(d.fines));
+
+        // Legend
+        legendBox
+          .selectAll(".legend-item")
+          .data(methods)
+          .enter()
+          .append("div")
+          .attr("class", "legend-item")
+          .html(
+            (d) => `
+            <div class="legend-color" style="background:${color(d)}"></div>
+            <div class="legend-label">${d}</div>
+          `
+          );
+      }
+
+      // ---------------------------------------------------------
+      // 7. EVENT WIRING
+      // ---------------------------------------------------------
+
+      // Important: use attachCheckboxLogic callbacks instead of overwriting "change" handlers
+
+      attachCheckboxLogic(
+        jurisDD.menu,
+        jurisDD.button,
+        selectedJurisdictions,
+        "All",
+        () => {
+          updateMethodMenu(); // methods depend on juris
+          draw();
+        }
+      );
+
+      attachCheckboxLogic(
+        methodDD.menu,
+        methodDD.button,
+        selectedMethods,
+        "All",
+        draw
+      );
+
+      btnAnnual.on("click", () => {
+        mode = "annual";
+        btnAnnual.classed("active", true);
+        btnMonthly.classed("active", false);
+        updateMethodMenu();
         draw();
       });
 
-      btnMonthly.on('click', ()=> {
-        mode = 'monthly';
-        btnAnnual.classed('active', false); btnMonthly.classed('active', true);
-        yearGroup.style('display','inline-block'); monthGroup.style('display','inline-block');
-        // ensure single year selected: keep yearSelect.current
-        updateMethodOptions();
+      btnMonthly.on("click", () => {
+        mode = "monthly";
+        btnAnnual.classed("active", false);
+        btnMonthly.classed("active", true);
+        updateMethodMenu();
         draw();
       });
 
-      // input wiring: jurisdiction & method checkboxes already call updateMethodOptions/draw
-      jurisDD.menu.selectAll('input').on('change', () => { updateMethodOptions(); draw(); });
-      methodDD.menu.selectAll('input').on('change', () => draw());
+      yearSelect.on("change", () => {
+        if (mode === "monthly") {
+          updateMethodMenu(); // year affects available methods
+          draw();
+        }
+      });
 
-      yearSelect.on('change', () => { if (mode === 'monthly') { updateMethodOptions(); draw(); } });
-      monthSelect.on('change', () => { if (mode === 'monthly') draw(); });
+      monthSelect.on("change", () => {
+        if (mode === "monthly") draw();
+      });
 
-      // initial visibility
-      yearGroup.style('display','none'); monthGroup.style('display','none');
-      updateMethodOptions();
+      d3.select("body").on("click", () =>
+        d3.selectAll(".filter-group").classed("is-open", false)
+      );
+
+      // INITIAL DRAW
+      updateMethodMenu();
       draw();
-
-      // click outside to close menus
-      d3.select('body').on('click', () => d3.selectAll('.filter-group').classed('is-open', false));
-
-    }).catch(err => console.error('Error loading data for finesByDetectionBar:', err));
+    });
   };
 })();
