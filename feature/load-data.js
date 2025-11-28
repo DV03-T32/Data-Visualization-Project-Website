@@ -6,6 +6,8 @@
     // --------- 1. Path to clean files -----------
     const ANNUAL_CSV_PATH = "datasets/annual_fines_clean.csv";
     const MONTHLY_CSV_PATH = "datasets/monthly_fines_clean.csv";
+    const POSITIVE_BREATH_CSV_PATH = "datasets/Positive_Breath.csv";
+    const CONDUCTED_BREATH_CSV_PATH = "datasets/conducted_breath_tests.csv";
 
     // ------ 2. Row converters ---------
     
@@ -58,8 +60,8 @@
     const dataPromise = Promise.all([
         d3.csv(ANNUAL_CSV_PATH, parseAnnualRow),
         d3.csv(MONTHLY_CSV_PATH, parseMonthlyRow),
-        d3.csv("datasets/Positive_Breath.csv", parsePositiveBreath),
-        d3.csv("datasets/conducted_breath_tests.csv", parseConductedBreath),
+        d3.csv(POSITIVE_BREATH_CSV_PATH, parsePositiveBreath),
+        d3.csv(CONDUCTED_BREATH_CSV_PATH, parseConductedBreath),
     ])
         .then(([annual, monthly, breath, conducted]) => {
             console.log("Loaded annual fines data:", annual);
@@ -77,7 +79,7 @@
 
     // Extended annual data (2008-2024) for age group and detection type charts
     const dataPromiseExtended = Promise.all([
-        d3.csv("datasets/annual_fines_2024.csv", parseAnnualRow),
+        d3.csv(ANNUAL_CSV_PATH, parseAnnualRow),
         d3.csv(MONTHLY_CSV_PATH, parseMonthlyRow),
     ])
         .then(([annual, monthly]) => {
@@ -93,39 +95,39 @@
     // 4. Public API - attach to window so charts can reuse the loaded data
     window.SpeedingData = {
     
-    // Load both annual and monthly datasets.
-    // Returns a Promise resolving to: { annual, monthly, breath }
-    loadAll() {
-        return dataPromise;
-    },
+        // Load both annual and monthly datasets.
+        // Returns a Promise resolving to: { annual, monthly, breath }
+        loadAll() {
+            return dataPromise;
+        },
 
-    // Convenience helpers if a chart only needs one dataset.
-    loadAnnual() {
-        return dataPromise.then((d) => d.annual);
-    },
+        // Convenience helpers if a chart only needs one dataset.
+        loadAnnual() {
+            return dataPromise.then((d) => d.annual);
+        },
 
-    loadMonthly() {
-        return dataPromise.then((d) => d.monthly);
-    },
+        loadMonthly() {
+            return dataPromise.then((d) => d.monthly);
+        },
 
-    // Load positive breath test data
-    loadBreath() {
-        return dataPromise.then((d) => d.breath);
-    },
+        // Load positive breath test data
+        loadBreath() {
+            return dataPromise.then((d) => d.breath);
+        },
 
-    // Load conducted breath tests
-    loadConducted() {
-        return dataPromise.then((d) => d.conducted);
-    },
+        // Load conducted breath tests
+        loadConducted() {
+            return dataPromise.then((d) => d.conducted);
+        },
 
-    // Helper: load annual fines, positive breath and conducted breath data together
-    loadAnnualWithBreath() {
-        return dataPromise.then((d) => ({ annual: d.annual, breath: d.breath, conducted: d.conducted }));
-    },
+        // Helper: load annual fines, positive breath and conducted breath data together
+        loadAnnualWithBreath() {
+            return dataPromise.then((d) => ({ annual: d.annual, breath: d.breath, conducted: d.conducted }));
+        },
 
-    // Extended data loader: annual (2008-2024) + monthly for age group and detection type charts
-    loadExtendedAnnualWithMonthly() {
-        return dataPromiseExtended.then((d) => ({ annual: d.annual, monthly: d.monthly }));
-    },
+        // Extended data loader: annual (2008-2024) + monthly for age group and detection type charts
+        loadExtendedAnnualWithMonthly() {
+            return dataPromiseExtended.then((d) => ({ annual: d.annual, monthly: d.monthly }));          
+        },
     };
 })();
