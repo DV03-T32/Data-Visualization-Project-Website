@@ -26,6 +26,9 @@
       .attr("viewBox", `0 0 ${width} ${height}`)
       .attr("preserveAspectRatio", "xMidYMid meet")
       .style("width", "100%")
+      .style("max-width", `${width}px`)
+      .style("display", "block")
+      .style("margin", "0 auto")
       .style("height", "auto");
 
     const innerW = width - margin.left - margin.right;
@@ -248,6 +251,7 @@
               .style("background", "#fff3cd")
               .style("border-left", "4px solid #ffc107")
               .style("border-radius", "4px")
+              
               .html(`<strong>📝 Annotation:</strong><br/>${annotations[selYear]}`);
           }
         }

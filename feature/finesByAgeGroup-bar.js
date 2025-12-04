@@ -26,6 +26,9 @@
       const jurisdictions = Array.from(new Set(monthly.map(d => d.jurisdiction))).sort();
       const years = Array.from(new Set(monthly.map(d => d.year))).sort((a,b)=>a-b);
       const detectionMethods = Array.from(new Set(monthly.map(d => d.detectionMethod))).sort();
+      // build a stable color map for years so every year (e.g., 2024) has an assigned color
+      const yearPalette = (d3.schemeSet2 || []).concat(d3.schemeTableau10 || [], d3.schemeCategory10 || []);
+      const yearColorMap = new Map(years.map((y,i) => [String(y), yearPalette[i % yearPalette.length]]));
       const rawAgeGroups = Array.from(new Set(monthly.map(d => d.ageGroup)));
       // Enforce desired order, keep only present groups
       const ageGroups = AGE_ORDER.filter(x => rawAgeGroups.includes(x));
@@ -87,6 +90,20 @@
         selectedAges: new Set(ageGroups),
         selectedMethods: new Set(detectionMethods) // default all
       };
+      // store previous multi-year selection when switching to monthly so we can restore it
+      let _prevSelectedYears = null;
+
+      // helper to sync year inputs with state.selectedYears and update button text
+      function syncYearInputs() {
+        yearDD.menu.selectAll('input').property('checked', function() {
+          return state.selectedYears.has(+this.value);
+        });
+        if (state.mode === 'annual') {
+          yearDD.button.text(`${state.selectedYears.size} selected`);
+        } else {
+          yearDD.button.text(Array.from(state.selectedYears)[0] || '');
+        }
+      }
 
       // --- Controls UI (single toolbox) ---
       const controls = container.append('div').attr('class','chart-controls');
@@ -128,11 +145,31 @@
       const yearInputs = yearItems.map(y => {
         const row = yearDD.menu.append('label').attr('class','filter-option');
         row.append('input').attr('type','checkbox').attr('value', y).property('checked', state.selectedYears.has(y))
-          .on('change', function(){ const v = +this.value; if (this.checked) state.selectedYears.add(v); else state.selectedYears.delete(v); yearDD.button.text(`${state.selectedYears.size} selected`); draw(); });
+          .on('change', function(){
+            const v = +this.value;
+            if (state.mode === 'monthly') {
+              // behave like radio: select this year only
+              if (this.checked) {
+                state.selectedYears.clear();
+                state.selectedYears.add(v);
+                // update inputs to reflect single selection
+                yearDD.menu.selectAll('input').property('checked', function() { return +this.value === v; });
+                yearDD.button.text(v);
+              } else {
+                // prevent unchecking the only selected year in monthly mode
+                this.checked = true;
+              }
+            } else {
+              if (this.checked) state.selectedYears.add(v); else state.selectedYears.delete(v);
+              yearDD.button.text(`${state.selectedYears.size} selected`);
+            }
+            draw();
+          });
         row.append('span').text(y);
         return row;
       });
-      yearDD.button.text(`${state.selectedYears.size} selected`);
+      // Sync initial button text with state and mode
+      syncYearInputs();
 
       // Month select (visible only in monthly mode)
       const monthGroup = filterRow.append('div').attr('class','filter-group');
@@ -187,7 +224,12 @@
         btnAnnual.classed('active', true);
         btnMonthly.classed('active', false);
         monthGroup.style('display', 'none');
-        yearDD.button.text(`${state.selectedYears.size} selected`);
+        // restore previous multi-year selection if we saved one when entering monthly
+        if (_prevSelectedYears) {
+          state.selectedYears = new Set(_prevSelectedYears);
+          _prevSelectedYears = null;
+        }
+        syncYearInputs();
         draw();
       });
       btnMonthly.on('click', ()=> {
@@ -197,14 +239,14 @@
         monthGroup.style('display', 'inline-block');
         // For monthly, ensure single-year selection: if more than 1, pick latest
         if (state.selectedYears.size > 1) {
+          // save current multi-year selection so we can restore when returning to annual
+          _prevSelectedYears = new Set(state.selectedYears);
           const latest = Array.from(state.selectedYears).sort((a,b)=>b-a)[0];
-          state.selectedYears.clear();
-          state.selectedYears.add(latest);
-          // update checkboxes
-          yearDD.menu.selectAll('input').property('checked', d => state.selectedYears.has(+d3.select(d3.event?.target).datum())); // safe fallback - we'll set programmatically below
-          yearDD.button.text(Array.from(state.selectedYears)[0]);
+          state.selectedYears = new Set([latest]);
+          // sync inputs and button text to reflect single selection
+          syncYearInputs();
         } else {
-          yearDD.button.text(Array.from(state.selectedYears)[0]);
+          syncYearInputs();
         }
         draw();
       });
@@ -212,7 +254,14 @@
       // --- SVG & layout ---
       const width = 960, height = 480;
       const margin = { top: 40, right: 20, bottom: 120, left: 120 };
-      const svg = container.append('svg').attr('viewBox', `0 0 ${width} ${height}`).attr('preserveAspectRatio','xMidYMid meet').style('width','100%').style('height','auto');
+      const svg = container.append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio','xMidYMid meet')
+        .style('width','100%')
+        .style('max-width', `${width}px`)
+        .style('display', 'block')
+        .style('margin', '0 auto')
+        .style('height','auto');
       const chartG = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
@@ -275,7 +324,7 @@
               .attr('width', x1.bandwidth())
               .attr('height', 0)
               .attr('rx', 4)
-              .attr('fill', d => color(String(d.year)))
+              .attr('fill', d => yearColorMap.get(String(d.year)) || '#111')
               .on('mousemove', function(event, d) {
                 // detection breakdown from annualDetectRoll
                 const detMap = (annualDetectRoll.get(state.jurisdiction)?.get(d.ageGroup)?.get(d.year)) || new Map();
@@ -287,19 +336,20 @@
               })
               .on('mouseleave', ()=> tooltip.style('opacity',0))
               .transition().duration(420).attr('y', d => y(d.value)).attr('height', d => innerH - y(d.value)),
-            update => update.transition().duration(300).attr('x', d => x1(String(d.year))).attr('y', d => y(d.value)).attr('width', x1.bandwidth()).attr('height', d => innerH - y(d.value)).attr('fill', d => color(String(d.year))),
+            update => update.transition().duration(300).attr('x', d => x1(String(d.year))).attr('y', d => y(d.value)).attr('width', x1.bandwidth()).attr('height', d => innerH - y(d.value)).attr('fill', d => yearColorMap.get(String(d.year)) || '#111'),
             exit => exit.transition().duration(200).attr('y', y(0)).attr('height', 0).remove()
           );
 
           // legend
           const legend = svg.selectAll('g.legend').data(selYears).join('g').attr('class','legend').attr('transform', (d,i)=>`translate(${margin.left + i*90},${10})`);
           legend.selectAll('*').remove();
-          legend.append('rect').attr('x',0).attr('y',-10).attr('width',12).attr('height',12).attr('rx',3).attr('fill', d => color(String(d)));
+          legend.append('rect').attr('x',0).attr('y',-10).attr('width',12).attr('height',12).attr('rx',3).attr('fill', d => yearColorMap.get(String(d)) || '#111');
           legend.append('text').attr('x',16).attr('y',0).text(d => d).style('font-size','12px');
 
         } else {
           // monthly mode: single year required (use latest if multiple)
           const selYear = Array.from(state.selectedYears).sort((a,b)=>b-a)[0] || years[years.length-1];
+          // use the year color mapping for monthly bars
           // if state.month is 0 => all months: aggregate across months in that year
           const m = state.month;
           // build data by ageGroup
@@ -334,7 +384,7 @@
             .attr('width', x.bandwidth())
             .attr('height', 0)
             .attr('rx', 5)
-            .attr('fill', '#111')
+            .attr('fill', d => yearColorMap.get(String(selYear)) || '#111')
             .on('mousemove', function(event, d) {
               // get detection breakdown from monthlyDetectRoll
               let detMap;
@@ -363,7 +413,7 @@
             .on('mouseleave', ()=> tooltip.style('opacity',0))
             .transition().duration(420).attr('y', d => y(d.fines)).attr('height', d => innerH - y(d.fines));
 
-          bars.transition().duration(300).attr('x', d => x(d.ageGroup)).attr('y', d => y(d.fines)).attr('width', x.bandwidth()).attr('height', d => innerH - y(d.fines));
+          bars.transition().duration(300).attr('x', d => x(d.ageGroup)).attr('y', d => y(d.fines)).attr('width', x.bandwidth()).attr('height', d => innerH - y(d.fines)).attr('fill', d => yearColorMap.get(String(selYear)) || '#111');
         }
       }
 

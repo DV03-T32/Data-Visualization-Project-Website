@@ -594,6 +594,12 @@
           );
       }
 
+       container
+      .append("div")
+      .attr("class", "chart-notes small-text")
+      .html(window.CHART_NOTES_HTML);
+
+
       // ---------------------------------------------------------
       // 7. EVENT WIRING
       // ---------------------------------------------------------
@@ -642,6 +648,8 @@
         }
       });
 
+      
+
       monthSelect.on("change", () => {
         if (mode === "monthly") draw();
       });
@@ -649,6 +657,7 @@
       d3.select("body").on("click", () =>
         d3.selectAll(".filter-group").classed("is-open", false)
       );
+
 
       // INITIAL DRAW
       updateMethodMenu();
