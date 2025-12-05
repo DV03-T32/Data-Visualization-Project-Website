@@ -41,7 +41,7 @@ window.CHART_NOTES_HTML = `
 
     <li><strong>Enforcement intensity differences:</strong> Remote or sparsely populated regions (e.g., WA, NT) have fewer cameras, which may under-represent actual speeding behaviour compared to urban states.</li>
 
-    <li><strong>COVID-19 impacts:</strong> Enforcement activity dipped in parts of 2020–2021 due to operational restrictions, potentially reducing fines in those years.</li>
+    <li><strong>COVID-19 impacts:</strong> Enforcement activity dipped in parts of 2020-2021 due to operational restrictions, potentially reducing fines in those years.</li>
 
     <li><strong>Data submission differences:</strong> Jurisdictions use different internal reporting cycles and systems, which BITRE standardises before publication. Minor timing inconsistencies may remain between states.</li>
 
