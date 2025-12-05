@@ -394,7 +394,10 @@ window.renderFinesByJurisdictionMultiLine = function (containerSelector) {
         .y((d) => yScale(d.fines))
         .curve(d3.curveMonotoneX);
 
-      chartArea
+      // -----------------------------
+      // Lines
+      // -----------------------------
+      const paths = chartArea
         .selectAll(".series-line")
         .data(series)
         .join("path")
@@ -402,7 +405,13 @@ window.renderFinesByJurisdictionMultiLine = function (containerSelector) {
         .attr("fill", "none")
         .attr("stroke", (d) => color(d.juris))
         .attr("stroke-width", 2)
-        .attr("d", (d) => line(d.values));
+        .attr("d", (d) => line(d.values))
+        .each(function () {
+          const L = this.getTotalLength();
+          d3.select(this)
+            .attr("stroke-dasharray", `${L} ${L}`)
+            .attr("stroke-dashoffset", L); // start fully hidden
+        });
 
       // -----------------------------
       // Legend (jurisdictions)
@@ -425,7 +434,9 @@ window.renderFinesByJurisdictionMultiLine = function (containerSelector) {
         .attr("class", "legend-label")
         .text((d) => JURIS_NAMES[d.juris] || d.juris);
 
-      // Hover points
+      // -----------------------------
+      // Points (start hidden)
+      // -----------------------------
       const allPoints = series.flatMap((s) =>
         s.values.map((v) => ({
           juris: s.juris,
@@ -434,15 +445,69 @@ window.renderFinesByJurisdictionMultiLine = function (containerSelector) {
         }))
       );
 
-      chartArea
+      const points = chartArea
         .selectAll(".point")
         .data(allPoints)
         .join("circle")
         .attr("class", "point")
         .attr("cx", (d) => xScale(d.t))
         .attr("cy", (d) => yScale(d.fines))
-        .attr("r", 3)
-        .attr("fill", (d) => color(d.juris));
+        .attr("fill", (d) => color(d.juris))
+        .attr("r", 0); // force ALL points to start invisible
+
+      // -----------------------------
+      // Animation functions
+      // -----------------------------
+      function animateLines() {
+        paths.interrupt(); // stop any previous animation
+
+        paths.each(function () {
+          const L = this.getTotalLength();
+          d3.select(this)
+            .attr("stroke-dasharray", `${L} ${L}`)
+            .attr("stroke-dashoffset", L)
+            .transition()
+            .duration(1500)
+            .ease(d3.easeLinear)
+            .attr("stroke-dashoffset", 0);
+        });
+      }
+
+      function animatePoints() {
+        points.interrupt(); // stop previous
+
+        points.each(function (d) {
+          const path = paths.filter((p) => p.juris === d.juris).node();
+          if (!path) return;
+
+          const L = path.getTotalLength();
+          const px = xScale(d.t);
+
+          let pos = 0;
+          for (let l = 0; l <= L; l += 4) {
+            const p = path.getPointAtLength(l);
+            if (p.x >= px) {
+              pos = l;
+              break;
+            }
+          }
+
+          const delay = (pos / L) * 1500;
+
+          d3.select(this)
+            .attr("r", 0) // ensure we always restart from 0
+            .transition()
+            .delay(delay)
+            .duration(300)
+            .attr("r", 3);
+        });
+      }
+
+      // Run AFTER shapes render so no flicker
+      setTimeout(() => {
+        animateLines();
+        animatePoints();
+      }, 30);
 
       // Hover interaction
       const uniqueT = Array.from(new Set(allPoints.map((d) => d.t))).sort(

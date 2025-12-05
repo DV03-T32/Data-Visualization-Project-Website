@@ -588,15 +588,25 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         .y((d) => yScale(d.fines))
         .curve(d3.curveMonotoneX);
 
-      chartArea
-        .selectAll(".series-line")
-        .data(series)
-        .join("path")
-        .attr("class", "series-line")
-        .attr("fill", "none")
-        .attr("stroke", (d) => color(d.method))
-        .attr("stroke-width", 2)
-        .attr("d", (d) => line(d.values));
+     const paths = chartArea
+       .selectAll(".series-line")
+       .data(series)
+       .join("path")
+       .attr("class", "series-line")
+       .attr("fill", "none")
+       .attr("stroke", (d) => color(d.method))
+       .attr("stroke-width", 2)
+       .each(function (d) {
+         const temp = line(d.values);
+         d._path = temp; // store built path for animation
+       })
+       .attr("d", (d) => d._path)
+       .each(function () {
+         const totalLength = this.getTotalLength();
+         d3.select(this)
+           .attr("stroke-dasharray", totalLength + " " + totalLength)
+           .attr("stroke-dashoffset", totalLength);
+       });
 
       const allPoints = series.flatMap((s) =>
         s.values.map((v) => ({
@@ -627,15 +637,86 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         .attr("class", "legend-label")
         .text((d) => d.method);
 
-      chartArea
+      const pointDuration = 2000; // match the line duration
+
+      // Draw points (invisible at first)
+      const points = chartArea
         .selectAll(".point")
         .data(allPoints)
         .join("circle")
         .attr("class", "point")
         .attr("cx", (d) => xScale(d.t))
         .attr("cy", (d) => yScale(d.fines))
-        .attr("r", 3)
-        .attr("fill", (d) => color(d.method));
+        .attr("r", 0) // start hidden
+        .attr("fill", (d) => color(d.method || d.juris));
+
+      points.each(function (d) {
+        // Get the matching <path> for this method/juris
+        const linePath = paths
+          .filter(function (p) {
+            return p.method === d.method || p.juris === d.juris;
+          })
+          .node();
+
+        if (!linePath) return;
+
+        const totalLength = linePath.getTotalLength();
+        const px = xScale(d.t);
+
+        // Walk along the line to find the first X ≥ point.x
+        let targetPos = 0;
+        for (let l = 0; l <= totalLength; l += 5) {
+          const p = linePath.getPointAtLength(l);
+          if (p.x >= px) {
+            targetPos = l;
+            break;
+          }
+        }
+      });
+
+      // --------------------------------------------------
+      //  ANIMATION (runs AFTER lines & points are rendered)
+      // --------------------------------------------------
+      function animateLines() {
+        paths.each(function () {
+          const totalLength = this.getTotalLength();
+          d3.select(this)
+            .transition()
+            .duration(1500)
+            .ease(d3.easeLinear)
+            .attr("stroke-dashoffset", 0);
+        });
+      }
+
+      function animatePoints() {
+        points.each(function (d) {
+          const linePath = paths.filter((p) => p.method === d.method).node();
+          if (!linePath) return;
+
+          const totalLength = linePath.getTotalLength();
+          const px = xScale(d.t);
+
+          let targetPos = 0;
+          for (let l = 0; l <= totalLength; l += 5) {
+            const p = linePath.getPointAtLength(l);
+            if (p.x >= px) {
+              targetPos = l;
+              break;
+            }
+          }
+
+          const delay = (targetPos / totalLength) * 1500;
+
+          d3.select(this).transition().delay(delay).duration(180).attr("r", 3);
+        });
+      }
+
+
+      // Run animations slightly AFTER rendering to avoid flicker
+      setTimeout(() => {
+        animateLines();
+        animatePoints();
+      }, 30);
 
       // Hover interaction: vertical line + dynamic legend
       const uniqueT = Array.from(new Set(allPoints.map((d) => d.t))).sort(
