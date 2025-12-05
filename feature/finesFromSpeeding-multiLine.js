@@ -67,6 +67,7 @@ window.renderFinesFromSpeedingMultiLine = function (containerSelector) {
         .text("All ");
 
       const menu = group.append("div").attr("class", "filter-menu");
+      menu.on("click", (event) => event.stopPropagation());
 
       // "All" option
       const allLabel = menu.append("label").attr("class", "filter-option");
