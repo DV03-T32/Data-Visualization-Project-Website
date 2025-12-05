@@ -325,7 +325,7 @@
           methodDD.button,
           selectedMethods,
           "All",
-          draw // 🔑 re-draw whenever methods change
+          draw // re-draw whenever methods change
         );
 
         color.domain(methods.length ? methods : allMethods);
