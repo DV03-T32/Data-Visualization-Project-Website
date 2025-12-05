@@ -35,6 +35,8 @@
       .text("All");
 
     const menu = g.append("div").attr("class", "filter-menu bw-menu");
+    // Prevent dropdown from closing when clicking inside
+    menu.on("click", (event) => event.stopPropagation());
 
     // "All" option
     const all = menu.append("label").attr("class", "filter-option");
@@ -338,6 +340,12 @@
         yAxisG.selectAll("*").remove();
         legendBox.selectAll("*").remove();
 
+        const selJurs = Array.from(selectedJurisdictions);
+        const jurLabel = selJurs.includes("__all__")
+          ? "All"
+          : selJurs.join(", ");
+
+
         yearGroup.style(
           "display",
           mode === "monthly" ? "inline-block" : "none"
@@ -454,12 +462,13 @@
                 .style("opacity", 1)
                 .html(
                   `
-                  <strong>${d.year}</strong><br/>
-                  <span style="display:inline-block;width:10px;height:10px;background:${color(
-                    d.method
-                  )};margin-right:6px"></span>
-                  ${d.method}: ${fmt(d.fines)}
-                `
+        <strong>${d.year}</strong><br/>
+        Jurisdictions: ${jurLabel}<br/>
+        <span style="display:inline-block;width:10px;height:10px;background:${color(
+          d.method
+        )};margin-right:6px"></span>
+        ${d.method}: ${fmt(d.fines)}
+      `
                 )
                 .style("left", event.pageX + 10 + "px")
                 .style("top", event.pageY - 40 + "px");
@@ -482,7 +491,7 @@
               <div class="legend-color" style="background:${color(d)}"></div>
               <div class="legend-label">${d}</div>
             `
-            );
+          );
 
           return;
         }
@@ -657,7 +666,6 @@
       d3.select("body").on("click", () =>
         d3.selectAll(".filter-group").classed("is-open", false)
       );
-
 
       // INITIAL DRAW
       updateMethodMenu();
