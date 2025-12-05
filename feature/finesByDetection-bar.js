@@ -217,6 +217,7 @@
         .attr("preserveAspectRatio", "xMidYMid meet")
         .style("width", "100%")
         .style("height", "auto");
+      
 
       const g = svg
         .append("g")
@@ -240,6 +241,15 @@
         .style("border-radius", "6px");
 
       const color = d3.scaleOrdinal(d3.schemeSet2);
+
+      // Y-axis label
+      svg
+        .append("text")
+        .attr("x", margin.left - 70)
+        .attr("y", svgH / 2)
+        .attr("text-anchor", "middle")
+        .attr("transform", `rotate(-90, ${margin.left - 80}, ${svgH / 2})`)
+        .text("Fines");
 
       // ---------------------------------------------------------
       // 4. POPULATE DROPDOWNS
@@ -344,7 +354,6 @@
         const jurLabel = selJurs.includes("__all__")
           ? "All"
           : selJurs.join(", ");
-
 
         yearGroup.style(
           "display",
@@ -491,7 +500,7 @@
               <div class="legend-color" style="background:${color(d)}"></div>
               <div class="legend-label">${d}</div>
             `
-          );
+            );
 
           return;
         }
@@ -603,11 +612,10 @@
           );
       }
 
-       container
-      .append("div")
-      .attr("class", "chart-notes small-text")
-      .html(window.CHART_NOTES_HTML);
-
+      container
+        .append("div")
+        .attr("class", "chart-notes small-text")
+        .html(window.CHART_NOTES_HTML);
 
       // ---------------------------------------------------------
       // 7. EVENT WIRING
@@ -656,8 +664,6 @@
           draw();
         }
       });
-
-      
 
       monthSelect.on("change", () => {
         if (mode === "monthly") draw();

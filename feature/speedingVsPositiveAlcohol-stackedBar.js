@@ -185,10 +185,10 @@
 
       // Y-axis label
       svg.append("text")
-        .attr("transform", `translate(${margin.left - 60}, ${height / 2}) rotate(-90)`)
+        .attr("transform", `translate(${margin.left - 80}, ${height / 2}) rotate(-90)`)
         .attr("text-anchor", "middle")
         .style("font-size", "0.9rem")
-        .text("Fines / Counts");
+        .text("Fines");
 
       // Helper: compute jurisdiction totals for pie based on selected filters
       function computePieTotals(filtered, selMetric) {

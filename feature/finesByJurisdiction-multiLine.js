@@ -198,8 +198,19 @@ window.renderFinesByJurisdictionMultiLine = function (containerSelector) {
     const svg = layout
       .append("svg")
       .attr("width", width)
-          .attr("height", height);
-      
+      .attr("height", height);
+
+    // Y-axis label
+    svg
+      .append("text")
+      .attr(
+        "transform",
+        `translate(${margin.left - 60}, ${height / 2}) rotate(-90)`
+      )
+      .attr("text-anchor", "middle")
+      .style("font-size", "0.9rem")
+      .text("Fines");
+
     // append legend LAST so it appears on the RIGHT
     const legendBox = layout.append("div").attr("class", "legend-box");
 

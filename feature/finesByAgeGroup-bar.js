@@ -563,6 +563,17 @@
         .style("margin", "0 auto")
         .style("height", "auto");
 
+      // Y-axis label
+      svg
+        .append("text")
+        .attr(
+          "transform",
+          `translate(${margin.left - 80}, ${height / 2}) rotate(-90)`
+        )
+        .attr("text-anchor", "middle")
+        .style("font-size", "0.9rem")
+        .text("Fines");
+
       const chartG = svg
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
