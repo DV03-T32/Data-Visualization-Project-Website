@@ -436,3 +436,14 @@ margin: 0.75rem 0;
     margin-top: 1rem;
   }
 }
+
+.chart-tutorial-note {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.4em;
+  text-align: left;
+  max-width: 500px;      
+  margin-left: auto;     
+  margin-right: auto;   
+}
+
