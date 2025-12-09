@@ -32,127 +32,145 @@
 
         <!-- HOME VIEW (no charts) -->
         <section id="view-home" class="view is-active">
-            <section class="section section-narrow">
-                <h2>About this dashboard</h2>
-                <p>
-                The T32 Speeding Dashboard summarises speeding fines issued between
-                2008 and 2024, highlighting the shift from police-issued fines to
-                technology-based enforcement such as fixed and mobile cameras.
-                </p>
-                <p>
-                It is designed for policymakers, enforcement agencies, journalists and
-                the public to compare trends across jurisdictions and detection methods
-                using a high data-ink ratio and minimal visual noise.
-                </p>
-            </section>
+            <section class="section">
+                <div class="section-narrow">
+                    <div class="info-section">
+                        <h2>About this dashboard</h2>
+                        <p>
+                            The T32 Speeding Dashboard summarises speeding fines issued between
+                            2008 and 2024, highlighting the shift from police-issued fines to
+                            technology-based enforcement such as fixed and mobile cameras.
+                        </p>
+                        <p>
+                            It is designed for policymakers, enforcement agencies, journalists and
+                            the public to compare trends across jurisdictions and detection methods
+                            using a high data-ink ratio and minimal visual noise.
+                        </p>
+                    </div>
 
-            <hr class="section-divider">
-
-             <!-- DATASETS USED -->
-            <section class="section section-narrow">
-                <h2>Datasets Used</h2>
-                <ul class="bullet-list">
-                <li>police_enforcement_2024_positive_breath_tests.xlsx</li>
-                <li>police_enforcement_2024_fines.xlsx</li>
-                </ul>
-            </section>
-
-            <hr class="section-divider">
-
-            <!-- DATA COLLECTION PROCESS -->
-            <section class="section section-narrow">
-                <h2>Data Collection Process</h2>
-                <ul class="bullet-list">
-                <li>
-                    Police Enforcement datasets are compiled by BITRE using data submitted by
-                    state and territory policing and transport agencies.
-                </li>
-
-                <li>
-                    Agencies contributing data include:
-                    <ul class="nested-bullet">
-                    <li>NSW Police Force</li>
-                    <li>Victoria Police</li>
-                    <li>Queensland Police Service</li>
-                    <li>Department of Transport and Main Roads (QLD)</li>
-                    <li>South Australia Police</li>
-                    <li>Western Australia Police Force</li>
-                    <li>Tasmania Police & Department of Police and Emergency Management</li>
-                    <li>Northern Territory Police</li>
-                    <li>Australian Federal Police</li>
-                    <li>Access Canberra</li>
-                    <li>Australian Infrastructure and Transport Statistics Yearbook</li>
-                    </ul>
-                </li>
-
-                <li>
-                    Each jurisdiction reports annual data and, from 2023 onwards, monthly enforcement activity.
-                </li>
-
-                <li>
-                    BITRE aggregates, validates, and standardises all submissions before publishing on the
-                    <em>Road Safety Data Hub</em>.
-                </li>
-                </ul>
-            </section>
-
-            <hr class="section-divider">
-
-            <!-- NOTES -->
-            <section class="section section-narrow small-text">
-                <h2>Notes</h2>
-                <ul class="bullet-list">
-                <li>Please refer to the Road User Placements for rules in Australia from the Office of Road Safety website.</li>
-                <li>Annual drivers licence data is sourced from the Australian Infrastructure and Transport Statistics Yearbook.</li>
-                <li>
-                    The Department of Infrastructure, Transport, Regional Development, Communications and the Arts 
-                    gratefully acknowledges the provision of data from state and territory agencies.
-                </li>
-                <li>NSW Police Force, Transport for NSW</li>
-                <li>Victoria Police, Department of Transport, Victoria</li>
-                <li>Queensland Police Service, Department of Transport and Main Roads, Queensland</li>
-                <li>South Australia Police, Department of Infrastructure and Transport, SA</li>
-                <li>Western Australia Police Force, Main Roads WA</li>
-                <li>Tasmania Police, Department of State Growth, Tasmania</li>
-                <li>Northern Territory Police, Department of Infrastructure, Planning and Logistics, NT</li>
-                <li>Australian Federal Police, Transport Canberra and City Services Directorate, ACT</li>
-                </ul>
-            </section>
-
-            <hr class="section-divider">
-
-            <section class="section section-narrow">
-                <h2>Questions this dashboard helps answer</h2>
-                <div class="cards">
-                <article class="card">
-                    <h3>Trends over time</h3>
-                    <p>How many fines were issued in each year between 2008 and 2009, and in each month between 2010 and 2024?</p>
-                </article>
-                <article class="card">
-                    <h3>Jurisdiction comparison</h3>
-                    <p>Are certain jurisdictions or periods of the year more prone to speeding?</p>
-                </article>
-                <article class="card">
-                    <h3>Detection methods</h3>
-                    <p>What enforcement methods are the most effective in detecting speeding?</p>
-                </article>
-                <article class="card">
-                    <h3>Demographic Behaviour</h3>
-                    <p>Are certain age groups more prone to speeding?</p>
-                </article>
-                <article class="card">
-                    <h3>Policy &amp; technology shifts</h3>
-                    <p>How have technology changes affected enforcement and compliance?</p>
-                </article>
-                <article class="card">
-                    <h3>Milestone Context</h3>
-                    <p>How did the COVID-19 pandemic impact the number of speeding infringements in Australia?</p>
-                </article>
+                    <!-- Quick Stats -->
+                    <div class="stats-preview">
+                        <div class="stat-box">
+                            <div class="stat-value">17</div>
+                            <div class="stat-label">Years</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">8</div>
+                            <div class="stat-label">Jurisdictions</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">5</div>
+                            <div class="stat-label">Detection Methods</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">6</div>
+                            <div class="stat-label">Age Groups</div>
+                        </div>
+                    </div>
                 </div>
             </section>
-        </section>
 
-        <!-- FINES FROM SPEEDING -->
+            <hr class="section-divider">
+
+            <section class="section">
+                <div class="section-narrow">
+                    <div class="info-section">
+                        <h2>Datasets Used</h2>
+                        <ul class="bullet-list">
+                            <li>police_enforcement_2024_positive_breath_tests.xlsx</li>
+                            <li>police_enforcement_2024_fines.xlsx</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="section-divider">
+
+            <section class="section">
+                <div class="section-narrow">
+                    <div class="info-section">
+                        <h2>Data Collection Process</h2>
+                        <ul class="bullet-list">
+                            <li>Police Enforcement datasets are compiled by BITRE using data submitted by state and territory policing and transport agencies.</li>
+                            <li>Agencies contributing data include:
+                                <ul class="nested-bullet">
+                                    <li>NSW Police Force</li>
+                                    <li>Victoria Police</li>
+                                    <li>Queensland Police Service</li>
+                                    <li>Department of Transport and Main Roads (QLD)</li>
+                                    <li>South Australia Police</li>
+                                    <li>Western Australia Police Force</li>
+                                    <li>Tasmania Police & Department of Police and Emergency Management</li>
+                                    <li>Northern Territory Police</li>
+                                    <li>Australian Federal Police</li>
+                                    <li>Access Canberra</li>
+                                    <li>Australian Infrastructure and Transport Statistics Yearbook</li>
+                                </ul>
+                            </li>
+                            <li>Each jurisdiction reports annual data and, from 2023 onwards, monthly enforcement activity.</li>
+                            <li>BITRE aggregates, validates, and standardises all submissions before publishing on the <em>Road Safety Data Hub</em>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="section-divider">
+
+            <section class="section">
+                <div class="section-narrow small-text">
+                    <div class="info-section">
+                        <h2>Notes</h2>
+                        <ul class="bullet-list">
+                            <li>Please refer to the Road User Placements for rules in Australia from the Office of Road Safety website.</li>
+                            <li>Annual drivers licence data is sourced from the Australian Infrastructure and Transport Statistics Yearbook.</li>
+                            <li>The Department of Infrastructure, Transport, Regional Development, Communications and the Arts gratefully acknowledges the provision of data from state and territory agencies.</li>
+                            <li>NSW Police Force, Transport for NSW</li>
+                            <li>Victoria Police, Department of Transport, Victoria</li>
+                            <li>Queensland Police Service, Department of Transport and Main Roads, Queensland</li>
+                            <li>South Australia Police, Department of Infrastructure and Transport, SA</li>
+                            <li>Western Australia Police Force, Main Roads WA</li>
+                            <li>Tasmania Police, Department of State Growth, Tasmania</li>
+                            <li>Northern Territory Police, Department of Infrastructure, Planning and Logistics, NT</li>
+                            <li>Australian Federal Police, Transport Canberra and City Services Directorate, ACT</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="section-divider">
+
+            <section class="section">
+                <div class="section-narrow">
+                    <h2>Questions this dashboard helps answer</h2>
+                    <div class="cards">
+                        <article class="card">
+                            <h3>Trends over time</h3>
+                            <p>How many fines were issued in each year between 2008 and 2009, and in each month between 2010 and 2024?</p>
+                        </article>
+                        <article class="card">
+                            <h3>Jurisdiction comparison</h3>
+                            <p>Are certain jurisdictions or periods of the year more prone to speeding?</p>
+                        </article>
+                        <article class="card">
+                            <h3>Detection methods</h3>
+                            <p>What enforcement methods are the most effective in detecting speeding?</p>
+                        </article>
+                        <article class="card">
+                            <h3>Demographic Behaviour</h3>
+                            <p>Are certain age groups more prone to speeding?</p>
+                        </article>
+                        <article class="card">
+                            <h3>Policy & technology shifts</h3>
+                            <p>How have technology changes affected enforcement and compliance?</p>
+                        </article>
+                        <article class="card">
+                            <h3>Milestone Context</h3>
+                            <p>How did the COVID-19 pandemic impact the number of speeding infringements in Australia?</p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+        </section>        <!-- FINES FROM SPEEDING -->
         <section id="view-speeding" class="view">
             <section class="section section-narrow">
                 <h2>Fines from speeding</h2>
